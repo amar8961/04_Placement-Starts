@@ -21,7 +21,7 @@ const productSchema = new Schema({
   }
 });
 
-module.exports = mongoose.model('Product', productSchema);  // Product is use for our collection name (products)
+module.exports = mongoose.model('Product', productSchema);
 
 // const mongodb = require('mongodb');
 // const getDb = require('../util/database').getDb;
