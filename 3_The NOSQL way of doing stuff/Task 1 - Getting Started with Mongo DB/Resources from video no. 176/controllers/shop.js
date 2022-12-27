@@ -87,6 +87,7 @@ exports.postOrder = (req, res, next) => {
     .then(user => {
       const products = user.cart.items.map(i => {
         return { quantity: i.quantity, product: { ...i.productId._doc } };
+        // ._doc we get really access to just the data that's in there and then with the spread operator inside of a new object, we pull out all the data in that document we retrieved and store it in a new object which we save here as a product.
       });
       const order = new Order({
         user: {
@@ -96,6 +97,9 @@ exports.postOrder = (req, res, next) => {
         products: products
       });
       return order.save();
+    })
+    .then(result => {
+      return req.user.clearCart();
     })
     .then(() => {
       res.redirect('/orders');
