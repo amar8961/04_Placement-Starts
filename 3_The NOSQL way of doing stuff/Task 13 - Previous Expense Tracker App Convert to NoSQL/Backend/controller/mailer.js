@@ -1,6 +1,6 @@
 const nodemailer = require("nodemailer");
 const ForgotPassword=require('../model/forgotPassword')
-const Users=require('../model/users')
+const User=require('../model/users')
 const { v4: uuidv4 } = require('uuid');
 const url="http://localhost:4000/resetPassword/"
 const bcrypt = require('bcrypt');
@@ -17,11 +17,13 @@ var password="fzegxhjutcimuixo"
 
 exports.sendMail=(req, res, next)=>{
     const id=uuidv4()
-    ForgotPassword.create({
-        id:id,
+    const forgotEntry=new ForgotPassword({
+        uuid:id,
         email:req.params.email,
         isActive:true
-    }).then(response=>{
+    })
+    return forgotEntry.save()
+    .then(response=>{
         var from="amarkr75@gmail.com"
         var to=req.params.email
         var subject="Password Reset Link"
@@ -55,10 +57,10 @@ exports.sendMail=(req, res, next)=>{
 
 exports.resetPassword=(req, res, next)=>{
     const uuid=req.params.uuid
-    ForgotPassword.findOne({where: {id:uuid, isActive:true}})
+    ForgotPassword.find({'uuid':uuid, 'isActive':true})
     .then(entry=>{
         console.log(entry)
-        if (entry){
+        if (entry.length > 0){
             res.sendFile('/views/reset.html', {root: __dirname })  // reset html
         }else{
             res.send(`<h1>"Invalid Link"</h1>`)
@@ -68,15 +70,19 @@ exports.resetPassword=(req, res, next)=>{
 
 exports.updatePassword=(req, res, next)=>{
     var uuid=(req.params.uuid)
-    ForgotPassword.findOne({where: {id:uuid, isActive:true}}).then(entry=>{
+    ForgotPassword.findOne({'uuid':uuid, 'isActive':true}).then(entry=>{
         if (entry){
             entry.isActive=false
             entry.save()
-            Users.findOne({where:{email:entry.email}}).then(user=>{
+            User.findOne({'email':entry.email}).then(user=>{
                 bcrypt.hash(req.body.password, saltRounds).then((hash)=>{
                     user.password=hash
                     user.save()
                     console.log('Password Updated!')
+                    return user.save()
+                    .then(result=>{
+                        res.send('<h1>Password Updated Successfully!</h1>')
+                    })
                 }).catch(err=>console.log(err))
             }).catch(err=>console.log(err))
         }else{
